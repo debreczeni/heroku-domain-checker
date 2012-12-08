@@ -23,7 +23,7 @@ class Cache
   end
 end
 
-class DomainFetcher
+class HerokuHostingChecker
   def initialize options = {}
     @cache = Cache.new force: options[:force]
   end
@@ -85,5 +85,5 @@ class DomainFetcher
   end
 end
 
-fetcher = DomainFetcher.new# force: true
-ap fetcher.domains_hosted_on_heroku
+checker = HerokuHostingChecker.new# force: true
+ap checker.domains_hosted_on_heroku
