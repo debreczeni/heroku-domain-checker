@@ -43,7 +43,7 @@ class DomainFetcher
     `dig +short #{domain}`.split("\n")
   end
 
-  def all_records_for domain_name, tries = 10
+  def all_records_for domain_name
     records_for(domain_name) | records_for("www.#{domain_name}")
   end
 
