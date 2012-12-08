@@ -5,16 +5,15 @@ require 'awesome_print'
 class Cache
   def initialize options = {}
     @tmp_dir = 'tmp'
-    @force = !options[:force].nil?
+    @force = options[:force]
   end
 
   def fetch key, options = {}
     force = options[:force].nil? ? @force : options[:force]
     Dir.mkdir @tmp_dir unless File.directory? @tmp_dir
     filepath = File.join @tmp_dir, key
-    if File.exists? filepath
-      File.delete(filepath) if force
-    else
+    File.delete(filepath) if force && File.exists?(filepath)
+    unless File.exists? filepath
       File.open filepath, 'w' do |file|
         file.write Marshal.dump(yield)
       end
@@ -25,7 +24,7 @@ end
 
 class DomainFetcher
   def initialize options = {}
-    @cache = Cache.new force: !options[:force].nil?
+    @cache = Cache.new force: options[:force]
   end
 
   def top1000
