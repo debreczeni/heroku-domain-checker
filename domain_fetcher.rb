@@ -4,21 +4,22 @@ require 'awesome_print'
 
 class Cache
   def initialize options = {}
-    @tmp_dir = 'tmp'
+    @tmp_dir = 'cache'
     @force = options[:force]
   end
 
   def fetch key, options = {}
     force = options[:force].nil? ? @force : options[:force]
-    Dir.mkdir @tmp_dir unless File.directory? @tmp_dir
-    filepath = File.join @tmp_dir, key
-    File.delete(filepath) if force && File.exists?(filepath)
-    unless File.exists? filepath
-      File.open filepath, 'w' do |file|
+    file_name = File.join @tmp_dir, key
+    file_dir = File.dirname file_name
+    Dir.mkdir file_dir unless File.directory? file_dir
+    File.delete(file_name) if force && File.exists?(file_name)
+    unless File.exists? file_name
+      File.open file_name, 'w' do |file|
         file.write Marshal.dump(yield)
       end
     end
-    Marshal.load File.open(filepath).read
+    Marshal.load File.open(file_name).read
   end
 end
 
@@ -74,24 +75,19 @@ class DomainFetcher
   end
 
   def domains_hosted_on_heroku
-    @cache.fetch 'domains_hosted_on_heroku' do
-      domains_on_heroku = []
-      top1000.each_with_index do |domain_name, index|
-        records = all_records_for(domain_name)
-        is_on_heroku = ''
-        records.each do |record|
-          if hosted_on_heroku? record
-            is_on_heroku = 'on_heroku'
-            domains_hosted_on_heroku << domain_name
-          end
-        end
-        puts sprintf("%5d %#{longest_in(top1000)}s #{is_on_heroku}", index + 1, domain_name)
+    domains_on_heroku = []
+    top1000.each_with_index do |domain_name, index|
+      records = @cache.fetch "domains/#{domain_name}" do
+        all_records_for(domain_name)
       end
-      domains_on_heroku
+      on_heroku = records.any? { |r| hosted_on_heroku? r }
+      domains_on_heroku << domain_name if on_heroku
+      printf("%5d %#{longest_in top1000}s #{'on heroku' if on_heroku}\n",
+        index + 1, domain_name)
     end
+    domains_on_heroku
   end
 end
 
 fetcher = DomainFetcher.new# force: true
 ap fetcher.domains_hosted_on_heroku
-# ap fetcher.heroku_addresses
