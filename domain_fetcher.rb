@@ -38,8 +38,12 @@ class DomainFetcher
     end
   end
 
-  def addresses_for domain
+  def records_for domain
     `dig +short #{domain}`.split("\n")
+  end
+
+  def all_records_for domain_name, tries = 10
+    records_for(domain_name) | records_for("www.#{domain_name}")
   end
 
   def heroku_addresses
@@ -47,9 +51,9 @@ class DomainFetcher
       addresses = []
       %w{proxy.herokuapp.com proxy.heroku.com}.each do |heroku_domain|
         puts "digging #{heroku_domain}"
-        (1..500).each do |index|
+        (1..1000).each do |index|
           printf("%3d ", index)
-          addresses_dug = addresses_for(heroku_domain)
+          addresses_dug = records_for(heroku_domain)
           new_addresses = addresses_dug - addresses
           puts new_addresses.empty? ? '' : new_addresses.join(' ')
           addresses = addresses + new_addresses
@@ -60,23 +64,34 @@ class DomainFetcher
     end
   end
 
-  def self.parse_top1000 options = {}
-    heroku_domains = []
-    self.new(options||{}).top1000[0..1].each_with_index do |domain_name, index|
-      records = `dig +short #{domain_name}`#.split("\n")
-      heroku = ''
-      if records.match(/heroku/)
-        heroku = 'yaay'
-        heroku_domains << domain_name
+  def longest_in domains
+    domains.group_by(&:length).max.first
+  end
+
+  def hosted_on_heroku? record
+    record.match /heroku/ or
+    heroku_addresses.include?(record)
+  end
+
+  def domains_hosted_on_heroku
+    @cache.fetch 'domains_hosted_on_heroku' do
+      domains_on_heroku = []
+      top1000.each_with_index do |domain_name, index|
+        records = all_records_for(domain_name)
+        is_on_heroku = ''
+        records.each do |record|
+          if hosted_on_heroku? record
+            is_on_heroku = 'on_heroku'
+            domains_hosted_on_heroku << domain_name
+          end
+        end
+        puts sprintf("%5d %#{longest_in(top1000)}s #{is_on_heroku}", index + 1, domain_name)
       end
-      puts sprintf("%5d %30s #{heroku}", index + 1, domain_name)
+      domains_on_heroku
     end
-    puts 'heroku domains:'
-    ap heroku_domains
-    nil
   end
 end
 
-# DomainFetcher.parse_top1000 #force: true
-fetcher = DomainFetcher.new
-ap fetcher.heroku_addresses
+fetcher = DomainFetcher.new# force: true
+ap fetcher.domains_hosted_on_heroku
+# ap fetcher.heroku_addresses
