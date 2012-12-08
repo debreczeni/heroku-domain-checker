@@ -43,10 +43,6 @@ class DomainFetcher
     `dig +short #{domain}`.split("\n")
   end
 
-  def all_records_for domain_name
-    records_for(domain_name) | records_for("www.#{domain_name}")
-  end
-
   def heroku_addresses
     @cache.fetch 'heroku_addresses' do
       addresses = []
@@ -78,7 +74,7 @@ class DomainFetcher
     domains_on_heroku = []
     top1000.each_with_index do |domain_name, index|
       records = @cache.fetch "domains/#{domain_name}" do
-        all_records_for(domain_name)
+        records_for("#{domain_name} www.#{domain_name}")
       end
       on_heroku = records.any? { |r| hosted_on_heroku? r }
       domains_on_heroku << domain_name if on_heroku
