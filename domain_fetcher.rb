@@ -4,7 +4,6 @@ require 'awesome_print'
 
 class Cache
   def initialize options = {}
-    # options ||= {}
     @tmp_dir = 'tmp'
     @force = !options[:force].nil?
   end
@@ -13,8 +12,9 @@ class Cache
     force = options[:force].nil? ? @force : options[:force]
     Dir.mkdir @tmp_dir unless File.directory? @tmp_dir
     filepath = File.join @tmp_dir, key
-    File.delete filepath if force
-    unless File.exists? filepath
+    if File.exists? filepath
+      File.delete(filepath) if force
+    else
       File.open filepath, 'w' do |file|
         file.write Marshal.dump(yield)
       end
@@ -39,6 +39,22 @@ class DomainFetcher
     end
   end
 
+  def addresses_for domain
+    `dig +short #{domain}`.split("\n")
+  end
+
+  def heroku_addresses
+    @cache.fetch 'heroku_addresses' do
+      addresses = []
+      (1..200).each do |index|
+        %w{proxy.herokuapp.com proxy.heroku.com}.each do |heroku_domain|
+          addresses = addresses + addresses_for(heroku_domain)
+        end
+      end
+      addresses.sort.uniq
+    end
+  end
+
   def self.parse_top1000 options = {}
     heroku_domains = []
     self.new(options||{}).top1000[0..1].each_with_index do |domain_name, index|
@@ -56,4 +72,6 @@ class DomainFetcher
   end
 end
 
-DomainFetcher.parse_top1000 #force: true
+# DomainFetcher.parse_top1000 #force: true
+fetcher = DomainFetcher.new
+ap fetcher.heroku_addresses
