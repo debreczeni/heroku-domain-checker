@@ -45,12 +45,18 @@ class DomainFetcher
   def heroku_addresses
     @cache.fetch 'heroku_addresses' do
       addresses = []
-      (1..200).each do |index|
-        %w{proxy.herokuapp.com proxy.heroku.com}.each do |heroku_domain|
-          addresses = addresses + addresses_for(heroku_domain)
+      %w{proxy.herokuapp.com proxy.heroku.com}.each do |heroku_domain|
+        puts "digging #{heroku_domain}"
+        (1..500).each do |index|
+          printf("%3d ", index)
+          addresses_dug = addresses_for(heroku_domain)
+          new_addresses = addresses_dug - addresses
+          puts new_addresses.empty? ? '' : new_addresses.join(' ')
+          addresses = addresses + new_addresses
+          new_addresses = []
         end
       end
-      addresses.sort.uniq
+      addresses.sort
     end
   end
 
