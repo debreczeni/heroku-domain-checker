@@ -31,6 +31,12 @@ class HerokuHostingChecker
     @cache = Cache.new force: options[:force]
   end
 
+  def ranking_of a_site
+    CSV.read('data/top-1m.csv').each { |the_site|
+      return the_site.first if the_site.last == a_site
+    }
+  end
+
   def top_sites
     @cache.fetch 'top_sites' do
       CSV.read('data/top-1m.csv').map { |site|
