@@ -1,6 +1,8 @@
 require 'nokogiri'
 require 'open-uri'
 require 'awesome_print'
+require 'csv'
+require 'uri'
 
 class Cache
   def initialize options = {}
@@ -28,14 +30,11 @@ class HerokuHostingChecker
     @cache = Cache.new force: options[:force]
   end
 
-  def top1000
-    html = @cache.fetch 'top1000.html' do
-      open('http://www.google.com/adplanner/static/top1000/').read
-    end
-    @cache.fetch 'domains.txt' do
-      Nokogiri::HTML(html).css('#data-table tr').map do |tr|
-        tr.css('td')[1].css('a')[1].content
-      end
+  def top_sites
+    @cache.fetch 'top_sites' do
+      CSV.read('data/top-1m.csv').map { |site|
+        site.last.match(URI::PATTERN::HOSTNAME).to_s
+      }.uniq
     end
   end
 
@@ -54,7 +53,6 @@ class HerokuHostingChecker
           new_addresses = addresses_dug - addresses
           puts new_addresses.empty? ? '' : new_addresses.join(' ')
           addresses = addresses + new_addresses
-          new_addresses = []
         end
       end
       addresses.sort
@@ -62,7 +60,9 @@ class HerokuHostingChecker
   end
 
   def longest_in domains
-    domains.group_by(&:length).max.first
+    @cache.fetch "longest_in/#{domains.hash}" do
+      domains.group_by(&:length).max.first
+    end
   end
 
   def hosted_on_heroku? record
@@ -72,13 +72,13 @@ class HerokuHostingChecker
 
   def domains_hosted_on_heroku
     domains_on_heroku = []
-    top1000.each_with_index do |domain_name, index|
-      records = @cache.fetch "domains/#{domain_name}" do
+    top_sites.each_with_index do |domain_name, index|
+      records = @cache.fetch "domains/#{domain_name}", force: true do
         records_for("#{domain_name} www.#{domain_name}")
       end
       on_heroku = records.any? { |r| hosted_on_heroku? r }
       domains_on_heroku << domain_name if on_heroku
-      printf("%5d %#{longest_in top1000}s #{'on heroku' if on_heroku}\n",
+      printf("%5d %#{longest_in top_sites}s #{'on heroku' if on_heroku}\n",
         index + 1, domain_name)
     end
     domains_on_heroku
