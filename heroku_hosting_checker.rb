@@ -34,7 +34,7 @@ class HerokuHostingChecker
     @cache.fetch 'top_sites' do
       CSV.read('data/top-1m.csv').map { |site|
         site.last.match(URI::PATTERN::HOSTNAME).to_s
-      }.uniq
+      }.uniq.delete_if(&:empty?)
     end
   end
 
