@@ -3,6 +3,7 @@ require 'open-uri'
 require 'awesome_print'
 require 'csv'
 require 'uri'
+require 'digest/sha1'
 
 class Cache
   def initialize options = {}
@@ -60,7 +61,7 @@ class HerokuHostingChecker
   end
 
   def longest_in domains
-    @cache.fetch "longest_in/#{domains.hash}" do
+    @cache.fetch "longest_in/#{Digest::SHA1.hexdigest domains.join}" do
       domains.group_by(&:length).max.first
     end
   end
