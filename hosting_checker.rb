@@ -1,6 +1,4 @@
-require 'nokogiri'
 require 'open-uri'
-require 'awesome_print'
 require 'csv'
 require 'uri'
 require 'digest/sha1'
@@ -100,5 +98,5 @@ class HostingChecker
 end
 
 checker = HostingChecker.new# force: true
-ap checker.domains_hosted_on_heroku
-# ap checker.top_sites.group_by(&:length).max
+p checker.domains_hosted_on_heroku
+# p checker.top_sites.group_by(&:length).max
