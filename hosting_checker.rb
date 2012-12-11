@@ -1,7 +1,10 @@
+#!/usr/bin/env ruby
+
 require 'open-uri'
 require 'csv'
 require 'uri'
 require 'digest/sha1'
+require 'net/dns'
 
 class Cache
   def initialize options = {}
@@ -44,7 +47,17 @@ class HostingChecker
   end
 
   def records_for domain
-    `dig +short #{domain}`.split("\n")
+    addresses = []
+
+    packet = Net::DNS::Resolver.start(domain)
+    packet.each_cname { |cname| addresses << cname; }
+    packet.each_address  { |ip| addresses << ip.to_s }
+
+    packet = Net::DNS::Resolver.start("www.#{domain}")
+    packet.each_cname { |cname| addresses << cname }
+    packet.each_address  { |ip| addresses << ip.to_s }
+
+    addresses.uniq
   end
 
   def heroku_addresses
@@ -81,11 +94,11 @@ class HostingChecker
     top_sites.each_with_index do |domain_name, index|
       begin
         records = @cache.fetch "domains/#{domain_name}" do
-          records_for("#{domain_name} www.#{domain_name}")
+          records_for(domain_name)
         end
       rescue ArgumentError
         records = @cache.fetch "domains/#{domain_name}", force: true do
-          records_for("#{domain_name} www.#{domain_name}")
+          records_for(domain_name)
         end
       end
       on_heroku = records.any? { |r| hosted_on_heroku? r }
