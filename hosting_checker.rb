@@ -81,8 +81,14 @@ class HostingChecker
     longest_domain_length = longest_in top_sites
     domains_on_heroku = []
     top_sites.each_with_index do |domain_name, index|
-      records = @cache.fetch "domains/#{domain_name}" do
-        records_for("#{domain_name} www.#{domain_name}")
+      begin
+        records = @cache.fetch "domains/#{domain_name}" do
+          records_for("#{domain_name} www.#{domain_name}")
+        end
+      rescue ArgumentError
+        records = @cache.fetch "domains/#{domain_name}", force: true do
+          records_for("#{domain_name} www.#{domain_name}")
+        end
       end
       on_heroku = records.any? { |r| hosted_on_heroku? r }
       domains_on_heroku << domain_name if on_heroku
