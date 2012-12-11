@@ -26,7 +26,7 @@ class Cache
   end
 end
 
-class HerokuHostingChecker
+class HostingChecker
   def initialize options = {}
     @cache = Cache.new force: options[:force]
   end
@@ -93,5 +93,6 @@ class HerokuHostingChecker
   end
 end
 
-checker = HerokuHostingChecker.new# force: true
+checker = HostingChecker.new# force: true
 ap checker.domains_hosted_on_heroku
+# ap checker.top_sites.group_by(&:length).max
