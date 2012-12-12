@@ -11,7 +11,11 @@ require 'models/record'
 Boot.boot!
 # Boot.clean_db!
 
-if ARGV[0] == 'start'
-  checker = HostingChecker.new# force: true
+checker = HostingChecker.new# force: true
+
+case ARGV[0]
+when 'flag'
   checker.flag_domains_hosted_on_heroku
+when 'save'
+  checker.save_top1m_site_in_database
 end
