@@ -1,1 +1,1 @@
-worker: ruby hosting_checker.rb start
+worker: ruby worker.rb start
