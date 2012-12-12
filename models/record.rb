@@ -22,9 +22,9 @@ class Record < ActiveRecord::Base
     packet.each_address  { |ip| addresses << ip.to_s }
 
     addresses.uniq
-  rescue Net::DNS::Resolver::NoResponseError => e
+  rescue => e
     puts e.inspect
     puts e.backtrace.join "\n"
-    ['nameserver.notfound']
+    nil
   end
 end
