@@ -54,9 +54,10 @@ class HostingChecker
   end
 
   def records_for domain
-    record = Record.find_or_create_by_domain domain
-    return record.adresses unless record.addresses.empty?
+    record = Record.find_by_domain domain
+    return Marshal.load(record.adresses) unless record.nil? || record.addresses.empty?
 
+    record = Record.new
     addresses = []
 
     packet = Net::DNS::Resolver.start(domain)
@@ -67,7 +68,7 @@ class HostingChecker
     packet.each_cname { |cname| addresses << cname }
     packet.each_address  { |ip| addresses << ip.to_s }
 
-    record.addresses = addresses.uniq
+    record.addresses = Marshal.dump(addresses.uniq)
     record.save!
 
     record.addresses
