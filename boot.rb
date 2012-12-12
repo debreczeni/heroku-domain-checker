@@ -18,6 +18,7 @@ module Boot
       db = YAML.load(ERB.new(File.read('config/database.yml')).result)[environment]
       ActiveRecord::Base.establish_connection(db)
     end
+    # ActiveRecord::Base.logger = Logger.new(STDOUT)
   end
 
   def self.clean_db!
