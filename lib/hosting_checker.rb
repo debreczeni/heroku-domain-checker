@@ -78,9 +78,16 @@ class HostingChecker
   def save_top1m_site_in_database
     longest_domain_length = longest_in top_sites
     top_sites_with_positions.each do |position_and_domain|
-      position, domain = position_and_domain
-      Record.update_or_create_by_domain_and_position domain, position
-      printf("%5d %#{longest_domain_length}s\n", position, domain)
+      begin
+        position, domain = position_and_domain
+        position = position.to_i
+        return if position < ENV['START'].to_i
+        # Record.update_or_create_by_domain_and_position domain, position
+        Record.create position: position, domain: domain
+        printf("%5d %#{longest_domain_length}s\n", position, domain)
+      rescue => e
+        puts e.inspect, e.backtrace.join("\n")
+      end
     end
   end
 
