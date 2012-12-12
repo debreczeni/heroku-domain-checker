@@ -11,6 +11,10 @@ task :migrate => :environment do
   ActiveRecord::Migrator.migrate('db/migrate', ENV["VERSION"] ? ENV["VERSION"].to_i : nil )
 end
 
+task :rollback => :environment do
+  ActiveRecord::Migrator.rollback('db/migrate')
+end
+
 task :environment do
   Boot.boot!
   # ActiveRecord::Base.logger = Logger.new(File.open('tmp/database.log', 'a'))
