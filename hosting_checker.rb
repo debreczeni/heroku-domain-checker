@@ -6,6 +6,7 @@ require 'uri'
 require 'digest/sha1'
 require 'net/dns'
 require 'active_record'
+require 'boot'
 
 class Cache
   def initialize options = {}
@@ -26,6 +27,9 @@ class Cache
     end
     Marshal.load File.open(file_name).read
   end
+end
+
+class Record < ActiveRecord::Base
 end
 
 class HostingChecker
@@ -67,6 +71,9 @@ class HostingChecker
   end
 
   def records_for domain
+    record = Record.find_or_create_by_domain domain
+    return record.adresses unless record.addresses.empty?
+
     addresses = []
 
     packet = Net::DNS::Resolver.start(domain)
@@ -77,7 +84,10 @@ class HostingChecker
     packet.each_cname { |cname| addresses << cname }
     packet.each_address  { |ip| addresses << ip.to_s }
 
-    addresses.uniq
+    record.addresses = addresses.uniq
+    record.save!
+
+    record.addresses
   end
 
   def heroku_addresses
@@ -130,7 +140,6 @@ class HostingChecker
   end
 end
 
-HostingChecker.boot!
 checker = HostingChecker.new# force: true
 p checker.domains_hosted_on_heroku
 # p checker.top_sites.group_by(&:length).max
