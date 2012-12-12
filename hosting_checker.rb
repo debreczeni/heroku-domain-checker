@@ -32,6 +32,7 @@ class Cache
 end
 
 class Record < ActiveRecord::Base
+  serialize :addresses
 end
 
 class HostingChecker
@@ -55,9 +56,9 @@ class HostingChecker
 
   def records_for domain
     record = Record.find_by_domain domain
-    return Marshal.load(record.adresses) unless record.nil? || record.addresses.empty?
+    return record.adresses unless record.nil? || record.addresses.empty?
 
-    record = Record.new
+    record = Record.new domain: domain
     addresses = []
 
     packet = Net::DNS::Resolver.start(domain)
@@ -68,7 +69,7 @@ class HostingChecker
     packet.each_cname { |cname| addresses << cname }
     packet.each_address  { |ip| addresses << ip.to_s }
 
-    record.addresses = Marshal.dump(addresses.uniq)
+    record.addresses = addresses.uniq
     record.save!
 
     record.addresses
