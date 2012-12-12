@@ -1,3 +1,6 @@
+require 'active_record'
+require 'net/dns'
+
 class Record < ActiveRecord::Base
   serialize :addresses
 
