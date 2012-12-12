@@ -4,6 +4,7 @@ class CreateRecords < ActiveRecord::Migration
       t.column :domain, :string, :null => false
       t.column :addresses, :binary, :null => false
     end
+    add_index :records, :domain
   end
 
   def self.down
