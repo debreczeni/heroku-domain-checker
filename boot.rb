@@ -1,3 +1,5 @@
+require 'erb'
+
 module Boot
   def self.boot!
     ENV['DATABASE_URL'] ||= 'postgres://pllhmannjudncf:Ps_3UxQoOwOHvtJc-EvPkri9ic@ec2-54-243-238-144.compute-1.amazonaws.com:5432/dfp7e26d8l7rdg'

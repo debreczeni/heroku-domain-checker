@@ -10,8 +10,8 @@ development:
   encoding: unicode
   database: hc_dev
   pool: 5
-  username: <%= ENV['PG_USER'] %>
-  password: <%= ENV['PG_PW'] %>
+  # username: <%= ENV['PG_USER'] %>
+  # password: <%= ENV['PG_PW'] %>
 test:
   adapter: postgresql
   encoding: unicode
