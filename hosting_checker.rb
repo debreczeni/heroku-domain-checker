@@ -49,6 +49,33 @@ end
 
 class Record < ActiveRecord::Base
   serialize :addresses
+
+  def self.find_or_initialize_then_resolve_by domain
+    record = Record.find_or_initialize_by_domain domain
+    return record unless record.addresses.nil? or record.addresses.empty?
+
+    record.addresses = Record.resolve_for domain
+
+    record
+  end
+
+  def self.resolve_for domain
+    addresses = []
+
+    packet = Net::DNS::Resolver.start(domain)
+    packet.each_cname { |cname| addresses << cname; }
+    packet.each_address  { |ip| addresses << ip.to_s }
+
+    packet = Net::DNS::Resolver.start("www.#{domain}")
+    packet.each_cname { |cname| addresses << cname }
+    packet.each_address  { |ip| addresses << ip.to_s }
+
+    addresses.uniq
+  rescue Net::DNS::Resolver::NoResponseError => e
+    puts e.inspect
+    puts e.backtrace.join "\n"
+    ['nameserver.notfound']
+  end
 end
 
 class HostingChecker
@@ -68,30 +95,6 @@ class HostingChecker
         site.last.match(URI::PATTERN::HOSTNAME).to_s
       }.uniq.delete_if(&:empty?)
     end
-  end
-
-  def resolve_and_save_records_for domain
-    record = Record.find_or_initialize_by_domain domain
-    return record.addresses unless record.addresses.empty?
-
-    record.addresses = resolve_records_for domain
-    record.save!
-
-    record.addresses
-  end
-
-  def resolve_records_for domain
-    addresses = []
-
-    packet = Net::DNS::Resolver.start(domain)
-    packet.each_cname { |cname| addresses << cname; }
-    packet.each_address  { |ip| addresses << ip.to_s }
-
-    packet = Net::DNS::Resolver.start("www.#{domain}")
-    packet.each_cname { |cname| addresses << cname }
-    packet.each_address  { |ip| addresses << ip.to_s }
-
-    addresses.uniq
   end
 
   def heroku_addresses
@@ -122,27 +125,16 @@ class HostingChecker
     heroku_addresses.include?(record)
   end
 
-  def domains_hosted_on_heroku
+  def flag_domains_hosted_on_heroku
     longest_domain_length = longest_in top_sites
-    domains_on_heroku = []
     top_sites.each_with_index do |domain_name, index|
-      begin
-        record = Record.find_or_initialize_by_domain domain_name
-        if record.addresses.nil? or record.addresses.empty?
-          record.addresses = @cache.get("domains/#{domain_name}") ||
-                             resolve_records_for(domain_name)
-        end
-        record.save!
-      rescue => e
-        puts e.inspect
-        puts e.backtrace.join "\n"
-      end
-      on_heroku = record.addresses.any? { |r| hosted_on_heroku? r }
-      domains_on_heroku << domain_name if on_heroku
-      printf("%5d %#{longest_domain_length}s #{'on heroku' if on_heroku}\n",
+      record = Record.find_or_initialize_then_resolve_by domain_name
+      record.on_heroku = record.addresses.any? { |r| hosted_on_heroku? r }
+      record.save!
+
+      printf("%5d %#{longest_domain_length}s #{'on heroku' if record.on_heroku}\n",
         index + 1, domain_name)
     end
-    domains_on_heroku
   end
 end
 
@@ -150,5 +142,5 @@ Boot.boot!
 # Boot.clean_db!
 
 checker = HostingChecker.new# force: true
-p checker.domains_hosted_on_heroku
+checker.flag_domains_hosted_on_heroku
 # p checker.top_sites.group_by(&:length).max
