@@ -18,5 +18,3 @@ module Boot
     end
   end
 end
-
-Boot.boot!
