@@ -4,6 +4,12 @@ require 'net/dns'
 class Record < ActiveRecord::Base
   serialize :addresses
 
+  def self.update_or_create_by_domain_and_position domain, position
+    record = Record.find_or_initialize_by_domain domain
+    record.position = position
+    record.save
+  end
+
   def self.return_existing_or_resolve_for domain
     record = Record.find_or_initialize_by_domain domain
     record.resolve_addresses if record.addresses.nil? or record.addresses.empty?

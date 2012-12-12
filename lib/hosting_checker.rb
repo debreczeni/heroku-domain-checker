@@ -22,6 +22,18 @@ class HostingChecker
     end
   end
 
+  def top_sites_with_positions
+    @cache.fetch 'top_sites_with_positions' do
+      CSV.read('data/top-1m.csv').map do |position_and_address|
+        position, address = position_and_address
+        return nil unless address
+        if domain = address.match(URI::PATTERN::HOSTNAME)
+          [position, domain.to_s]
+        else nil end
+      end.compact.uniq
+    end
+  end
+
   def heroku_addresses
     @cache.fetch 'heroku_addresses' do
       addresses = []
@@ -62,4 +74,14 @@ class HostingChecker
         index + 1, domain_name)
     end
   end
+
+  def save_top1m_site_in_database
+    longest_domain_length = longest_in top_sites
+    top_sites_with_positions.each do |position_and_domain|
+      position, domain = position_and_domain
+      Record.update_or_create_by_domain_and_position domain, position
+      printf("%5d %#{longest_domain_length}s\n", position, domain)
+    end
+  end
+
 end
