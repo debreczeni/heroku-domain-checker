@@ -3,6 +3,7 @@ class CreateRecords < ActiveRecord::Migration
     create_table :records do |t|
       t.column :domain, :string, :null => false
       t.column :addresses, :binary, :null => false
+      t.column :on_heroku, :boolean, default: false
     end
     add_index :records, :domain
   end
