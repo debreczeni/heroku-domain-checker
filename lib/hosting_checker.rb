@@ -83,8 +83,9 @@ class HostingChecker
         position = position.to_i
         return if position < ENV['START'].to_i
         # Record.update_or_create_by_domain_and_position domain, position
+        printf("%5d %#{longest_domain_length}s ...", position, domain)
         Record.create position: position, domain: domain
-        printf("%5d %#{longest_domain_length}s\n", position, domain)
+        printf("Done\n")
       rescue => e
         puts e.inspect, e.backtrace.join("\n")
       end
