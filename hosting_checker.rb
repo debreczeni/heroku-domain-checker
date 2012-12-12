@@ -126,6 +126,8 @@ class HostingChecker
 end
 
 Boot.boot!
+# Boot.clean_db!
+
 checker = HostingChecker.new# force: true
 p checker.domains_hosted_on_heroku
 # p checker.top_sites.group_by(&:length).max

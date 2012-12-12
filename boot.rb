@@ -17,4 +17,8 @@ module Boot
       ActiveRecord::Base.establish_connection(db)
     end
   end
+
+  def self.clean_db!
+    Record.destroy_all
+  end
 end
