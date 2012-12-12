@@ -6,6 +6,7 @@ require 'uri'
 require 'digest/sha1'
 require 'net/dns'
 require 'active_record'
+# require 'debugger'
 
 $:.unshift File.dirname(__FILE__)
 require 'boot'
@@ -14,6 +15,21 @@ class Cache
   def initialize options = {}
     @tmp_dir = 'cache'
     @force = options[:force]
+  end
+
+  def get key
+    file_name = File.join @tmp_dir, key
+    if File.exists? file_name
+      begin
+        Marshal.load File.open(file_name).read
+      rescue => e
+        puts e.inspect
+        puts e.backtrace.join "\n"
+        nil
+      end
+    else
+      nil
+    end
   end
 
   def fetch key, options = {}
@@ -54,11 +70,17 @@ class HostingChecker
     end
   end
 
-  def records_for domain
-    record = Record.find_by_domain domain
-    return record.adresses unless record.nil? || record.addresses.empty?
+  def resolve_and_save_records_for domain
+    record = Record.find_or_initialize_by_domain domain
+    return record.addresses unless record.addresses.empty?
 
-    record = Record.new domain: domain
+    record.addresses = resolve_records_for domain
+    record.save!
+
+    record.addresses
+  end
+
+  def resolve_records_for domain
     addresses = []
 
     packet = Net::DNS::Resolver.start(domain)
@@ -69,10 +91,7 @@ class HostingChecker
     packet.each_cname { |cname| addresses << cname }
     packet.each_address  { |ip| addresses << ip.to_s }
 
-    record.addresses = addresses.uniq
-    record.save!
-
-    record.addresses
+    addresses.uniq
   end
 
   def heroku_addresses
@@ -108,15 +127,17 @@ class HostingChecker
     domains_on_heroku = []
     top_sites.each_with_index do |domain_name, index|
       begin
-        records = @cache.fetch "domains/#{domain_name}" do
-          records_for(domain_name)
+        record = Record.find_or_initialize_by_domain domain_name
+        if record.addresses.nil? or record.addresses.empty?
+          record.addresses = @cache.get("domains/#{domain_name}") ||
+                             resolve_records_for(domain_name)
         end
-      rescue ArgumentError
-        records = @cache.fetch "domains/#{domain_name}", force: true do
-          records_for(domain_name)
-        end
+        record.save!
+      rescue => e
+        puts e.inspect
+        puts e.backtrace.join "\n"
       end
-      on_heroku = records.any? { |r| hosted_on_heroku? r }
+      on_heroku = record.addresses.any? { |r| hosted_on_heroku? r }
       domains_on_heroku << domain_name if on_heroku
       printf("%5d %#{longest_domain_length}s #{'on heroku' if on_heroku}\n",
         index + 1, domain_name)
