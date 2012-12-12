@@ -1,27 +1,32 @@
 class Record < ActiveRecord::Base
   serialize :addresses
 
-  def self.find_or_initialize_then_resolve_by domain
+  def self.return_existing_or_resolve_for domain
     record = Record.find_or_initialize_by_domain domain
-    return record unless record.addresses.nil? or record.addresses.empty?
-
-    record.addresses = Record.resolve_for domain
-
+    record.resolve_addresses if record.addresses.nil? or record.addresses.empty?
     record
+  end
+
+  def resolve_addresses
+    addresses = Record.resolve_for self.domain
   end
 
   def self.resolve_for domain
     addresses = []
 
-    packet = Net::DNS::Resolver.start(domain)
-    packet.each_cname { |cname| addresses << cname; }
-    packet.each_address  { |ip| addresses << ip.to_s }
+    [domain, "www.#{domain}"].each do |name_to_resolve|
+      Net::DNS::Resolver.start(domain).tap do |packet|
+        packet.each_cname do |cname|
+          addresses << cname unless addresses.include? cname
+        end
+        packet.each_address do |ip|
+          ip = ip.to_s
+          addresses << ip unless addresses.include? ip
+        end
+      end
+    end
 
-    packet = Net::DNS::Resolver.start("www.#{domain}")
-    packet.each_cname { |cname| addresses << cname }
-    packet.each_address  { |ip| addresses << ip.to_s }
-
-    addresses.uniq
+    addresses
   rescue => e
     puts e.inspect
     puts e.backtrace.join "\n"

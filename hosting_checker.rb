@@ -63,7 +63,8 @@ class HostingChecker
   def flag_domains_hosted_on_heroku
     longest_domain_length = longest_in top_sites
     top_sites.each_with_index do |domain_name, index|
-      record = Record.find_or_initialize_then_resolve_by domain_name
+      record = Record.return_existing_or_resolve_for domain_name
+
       record.on_heroku = record.addresses.any? { |r| hosted_on_heroku? r }
       record.save!
 
