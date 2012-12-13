@@ -64,14 +64,20 @@ class HostingChecker
 
   def flag_domains_hosted_on_heroku
     longest_domain_length = longest_in top_sites
-    top_sites.each_with_index do |domain_name, index|
-      record = Record.return_existing_or_resolve_for domain_name
-
-      record.on_heroku = record.addresses.any? { |r| hosted_on_heroku? r }
-      record.save!
-
-      printf("%5d %#{longest_domain_length}s #{'on heroku' if record.on_heroku}\n",
-        index + 1, domain_name)
+    Record.where(status: :unchecked).find_in_batches do |records|
+      Record.where(id: records.map(&:id)).update_all(:status, :checking)
+      records.each do |record|
+        begin
+          printf("%5d %#{longest_domain_length}s #{'on heroku' if record.on_heroku}\n",
+            index + 1, domain_name)
+          record.resolve_addresses
+          record.on_heroku = record.addresses.any? { |r| hosted_on_heroku? r }
+          record.save!
+        rescue => e
+          puts e.inspect, e.backtrace.join("\n")
+        end
+      end
+      Record.where(id: records.map(&:id)).update_all(:status, :checked)
     end
   end
 
