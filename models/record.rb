@@ -37,8 +37,7 @@ class Record < ActiveRecord::Base
 
     addresses
   rescue => e
-    puts e.inspect
-    puts e.backtrace.join "\n"
+    puts e.inspect, e.backtrace.join("\n")
     nil
   end
 end
