@@ -1,4 +1,5 @@
 require 'erb'
+require 'logger'
 
 module Boot
   def self.boot!
