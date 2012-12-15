@@ -79,6 +79,7 @@ class HostingChecker
         Record.where(id: records.map(&:id)).update_all(status: :checking)
         records.each do |record|
           begin
+            record.position = ranking_of record.domain if record.position.nil?
             printf("id: %5d pos: %5d %#{Record::MAX_DOMAIN_CHARS}s #{'on heroku' if record.on_heroku}\n",
               record.id, record.position, record.domain)
             record.resolve_addresses
