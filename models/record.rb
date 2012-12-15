@@ -19,7 +19,7 @@ class Record < ActiveRecord::Base
   end
 
   def resolve_addresses
-    addresses = Record.resolve_for self.domain
+    self.addresses = Record.resolve_for self.domain
   end
 
   def self.resolve_for domain
