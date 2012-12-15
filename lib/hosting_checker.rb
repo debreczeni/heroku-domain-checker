@@ -91,7 +91,7 @@ class HostingChecker
             record.save!
           end
         end
-        Record.where(id: records.map(&:id)).where('status <> "error"').update_all(status: :checked)
+        Record.where(id: records.map(&:id)).where("status <> 'error'").update_all(status: :checked)
       end
     end
   end
