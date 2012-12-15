@@ -12,6 +12,7 @@ class HostingChecker
     CSV.read('data/top-1m.csv').each { |the_site|
       return the_site.first if the_site.last == a_site
     }
+    return 0
   end
 
   def top_sites
