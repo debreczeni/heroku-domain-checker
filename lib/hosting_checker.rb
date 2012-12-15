@@ -79,7 +79,7 @@ class HostingChecker
         records.each do |record|
           begin
             printf("id: %5d pos: %5d %#{Record::MAX_DOMAIN_CHARS}s #{'on heroku' if record.on_heroku}\n",
-              record.id, record.position, domain_name)
+              record.id, record.position, record.domain)
             record.resolve_addresses
             record.on_heroku = record.addresses.any? { |r| hosted_on_heroku? r }
             record.status = 'error'
