@@ -7,6 +7,7 @@ require 'boot'
 require 'lib/cache'
 require 'lib/hosting_checker'
 require 'models/record'
+require 'models/heroku_address'
 
 Boot.boot!
 # Boot.clean_db!
