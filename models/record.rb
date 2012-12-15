@@ -2,6 +2,8 @@ require 'active_record'
 require 'net/dns'
 
 class Record < ActiveRecord::Base
+  MAX_DOMAIN_CHARS = 67
+
   serialize :addresses
 
   def self.update_or_create_by_domain_and_position domain, position

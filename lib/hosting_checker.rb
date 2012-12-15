@@ -63,12 +63,11 @@ class HostingChecker
   end
 
   def flag_domains_hosted_on_heroku
-    longest_domain_length = longest_in top_sites
     Record.where(status: :unchecked).find_in_batches do |records|
       Record.where(id: records.map(&:id)).update_all(:status, :checking)
       records.each do |record|
         begin
-          printf("%5d %#{longest_domain_length}s #{'on heroku' if record.on_heroku}\n",
+          printf("%5d %#{Record::MAX_DOMAIN_CHARS}s #{'on heroku' if record.on_heroku}\n",
             index + 1, domain_name)
           record.resolve_addresses
           record.on_heroku = record.addresses.any? { |r| hosted_on_heroku? r }
@@ -82,13 +81,12 @@ class HostingChecker
   end
 
   def save_top1m_site_in_database
-    longest_domain_length = longest_in top_sites
     top_sites_with_positions.each do |position_and_domain|
       begin
         position, domain = position_and_domain
         position = position.to_i
         next if position < ENV['START'].to_i
-        printf("%5d %#{longest_domain_length}s ...", position, domain)
+        printf("%5d %#{Record::MAX_DOMAIN_CHARS}s ...", position, domain)
         # Record.update_or_create_by_domain_and_position domain, position
         Record.create position: position, domain: domain
         printf("Done\n")
