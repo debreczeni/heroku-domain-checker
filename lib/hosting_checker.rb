@@ -80,7 +80,7 @@ class HostingChecker
         records.each do |record|
           begin
             record.position = ranking_of record.domain if record.position.nil?
-            printf("id: %5d pos: %5d %#{Record::MAX_DOMAIN_CHARS}s #{'on heroku' if record.on_heroku}\n",
+            printf("id: %7d pos: %7d %#{Record::MAX_DOMAIN_CHARS}s #{'on heroku' if record.on_heroku}\n",
               record.id, record.position, record.domain)
             record.resolve_addresses
             record.on_heroku = record.addresses.any? { |r| hosted_on_heroku? r }
@@ -102,7 +102,7 @@ class HostingChecker
         position, domain = position_and_domain
         position = position.to_i
         next if position < ENV['START'].to_i
-        printf("%5d %#{Record::MAX_DOMAIN_CHARS}s ...", position, domain)
+        printf("%7d %#{Record::MAX_DOMAIN_CHARS}s ...", position, domain)
         # Record.update_or_create_by_domain_and_position domain, position
         Record.create position: position, domain: domain
         printf("Done\n")
