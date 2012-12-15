@@ -75,7 +75,7 @@ class HostingChecker
   def flag_domains_hosted_on_heroku
     Record.where(status: :unchecked).find_in_batches(batch_size: 100) do |records|
       Record.transaction do
-        Record.where(id: records.map(&:id)).update_all(:status, :checking)
+        Record.where(id: records.map(&:id)).update_all(status: 'checking')
         records.each do |record|
           begin
             printf("%5d %#{Record::MAX_DOMAIN_CHARS}s #{'on heroku' if record.on_heroku}\n",
@@ -87,7 +87,7 @@ class HostingChecker
             puts e.inspect, e.backtrace.join("\n")
           end
         end
-        Record.where(id: records.map(&:id)).update_all(:status, :checked)
+        Record.where(id: records.map(&:id)).update_all(status: 'checked')
       end
     end
   end
