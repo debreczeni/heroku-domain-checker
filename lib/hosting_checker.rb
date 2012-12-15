@@ -36,18 +36,28 @@ class HostingChecker
 
   def heroku_addresses
     @cache.fetch 'heroku_addresses' do
-      addresses = []
-      %w{proxy.herokuapp.com proxy.heroku.com}.each do |heroku_domain|
-        puts "digging #{heroku_domain}"
-        (1..1000).each do |index|
-          printf("%3d ", index)
-          addresses_dug = records_for(heroku_domain)
-          new_addresses = addresses_dug - addresses
-          puts new_addresses.empty? ? '' : new_addresses.join(' ')
-          addresses = addresses + new_addresses
+      heroku_addresses = HerokuAddress.all
+      if heroku_addresses.empty?
+        %w{proxy.herokuapp.com proxy.heroku.com}.each do |heroku_domain|
+          puts "digging #{heroku_domain}"
+          (1..1000).each do |index|
+            printf("%3d ", index)
+            addresses_dug = records_for(heroku_domain)
+            new_addresses = addresses_dug - HerokuAddress.all.map(&:ip)
+            if new_addresses.empty?
+              puts ''
+            else
+              puts new_addresses.join(' ')
+              new_addresses.each do |new_address|
+                HerokuAddress.find_create_by_ip(new_address)
+              end
+            end
+          end
         end
+        HerokuAddress.all.map(&:ip)
+      else
+        heroku_addresses.map(&:ip)
       end
-      addresses.sort
     end
   end
 
