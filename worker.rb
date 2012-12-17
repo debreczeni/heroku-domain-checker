@@ -8,9 +8,14 @@ require 'lib/cache'
 require 'lib/hosting_checker'
 require 'models/record'
 require 'models/heroku_address'
+require 'sinatra'
 
 Boot.boot!
 # Boot.clean_db!
+
+get '/' do
+  'Hello world!'
+end
 
 checker = HostingChecker.new# force: true
 
